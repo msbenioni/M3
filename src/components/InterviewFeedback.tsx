@@ -1,31 +1,71 @@
 import React from 'react';
-import { CheckCircle, RefreshCcw } from 'lucide-react';
+import { CheckCircle, RefreshCcw, Star } from 'lucide-react';
 
-interface InterviewFeedbackProps {
-  feedback: string;
+interface InterviewFeedback {
+  feedback: {
+    overallFeedback: string;
+    strengths: Array<{ strength: string; proverb: string }>;
+    improvements: Array<{ improvement: string; proverb: string }>;
+    rating: number;
+    conclusion: string;
+  };
   onRestart: () => void;
 }
 
-export function InterviewFeedback({ feedback, onRestart }: InterviewFeedbackProps) {
+export function InterviewFeedback({ feedback, onRestart }: InterviewFeedback) {
   return (
-    <div className="space-y-6 rounded-lg bg-white p-6 shadow-lg">
-      <div className="flex items-center gap-2 text-green-600">
-        <CheckCircle className="h-6 w-6" />
-        <h2 className="text-xl font-semibold">Interview Complete</h2>
-      </div>
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Feedback & Suggestions</h3>
-        <div className="rounded-lg bg-gray-50 p-4 text-gray-700">
-          {feedback}
+    <div className="w-full rounded-lg bg-white p-6 shadow-lg">
+      <h2 className="mb-4 text-2xl font-bold">Interview Feedback</h2>
+      
+      <div className="space-y-6">
+        <div>
+          <h3 className="mb-2 text-xl font-semibold">Overall Feedback</h3>
+          <p className="text-gray-700">{feedback.overallFeedback}</p>
         </div>
+
+        <div>
+          <h3 className="mb-2 text-xl font-semibold">Strengths</h3>
+          <ul className="list-inside list-disc space-y-2">
+            {feedback.strengths.map((item, index) => (
+              <li key={index} className="text-gray-700">
+                <span className="font-medium">{item.strength}</span>
+                <br />
+                <span className="italic text-gray-600">"{item.proverb}"</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="mb-2 text-xl font-semibold">Areas for Improvement</h3>
+          <ul className="list-inside list-disc space-y-2">
+            {feedback.improvements.map((item, index) => (
+              <li key={index} className="text-gray-700">
+                <span className="font-medium">{item.improvement}</span>
+                <br />
+                <span className="italic text-gray-600">"{item.proverb}"</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="mb-2 text-xl font-semibold">Rating</h3>
+          <p className="text-gray-700">{feedback.rating}/10</p>
+        </div>
+
+        <div>
+          <h3 className="mb-2 text-xl font-semibold">Conclusion</h3>
+          <p className="text-gray-700">{feedback.conclusion}</p>
+        </div>
+
+        <button
+          onClick={onRestart}
+          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          Start New Interview
+        </button>
       </div>
-      <button
-        onClick={onRestart}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-      >
-        <RefreshCcw className="h-5 w-5" />
-        Start New Interview
-      </button>
     </div>
   );
 }

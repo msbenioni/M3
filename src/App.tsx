@@ -12,7 +12,10 @@ function App() {
     isLoading: false,
     isComplete: false,
     feedback: null,
+    questionCount: 0
   });
+
+  const [readyForFeedback, setReadyForFeedback] = useState(false);
 
   const handleStartInterview = (jobTitle: string) => {
     setState({
@@ -26,31 +29,71 @@ function App() {
       isLoading: false,
       isComplete: false,
       feedback: null,
+      questionCount: 0
     });
   };
 
   const handleSubmitResponse = async (message: string) => {
-    // TODO: Implement Gemini API integration
+    console.log('Current question count:', state.questionCount);
+
     setState((prev) => ({
       ...prev,
       messages: [...prev.messages, { role: 'user', content: message }],
       isLoading: true,
     }));
 
-    // Temporary mock response
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/gemini/start-interview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: state.jobTitle,
+          userResponse: message,
+          questionCount: state.questionCount
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from API');
+      }
+
+      const data = await response.json();
+      console.log('Response from API:', data);
+      
+      if (data.isComplete) {
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          messages: [
+            ...prev.messages,
+            { role: 'assistant', content: data.message }
+          ],
+        }));
+        setReadyForFeedback(true);
+        return;
+      }
+
       setState((prev) => ({
         ...prev,
         isLoading: false,
+        questionCount: prev.questionCount + 1,
         messages: [
           ...prev.messages,
           {
             role: 'assistant',
-            content: 'Thank you for your response. What would you say are your greatest strengths?',
+            content: data.message,
           },
         ],
       }));
-    }, 1000);
+    } catch (error) {
+      console.error('Error:', error);
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+      }));
+    }
   };
 
   const handleRestart = () => {
@@ -60,7 +103,64 @@ function App() {
       isLoading: false,
       isComplete: false,
       feedback: null,
+      questionCount: 0
     });
+  };
+
+  const getFeedback = async (messages: Array<{ role: string; content: string }>) => {
+    try {
+      console.log('Getting feedback for messages:', messages);
+      setState(prev => ({ ...prev, isLoading: true }));
+      
+      const response = await fetch('/api/gemini/get-feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: state.jobTitle,
+          responses: messages,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get feedback: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Raw feedback data:', data);
+      
+      if (!data.feedback) {
+        throw new Error('No feedback data received');
+      }
+
+      setState(prev => ({
+        ...prev,
+        isComplete: true,
+        isLoading: false,
+        feedback: data.feedback,
+      }));
+    } catch (error) {
+      console.error('Error getting feedback:', error);
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+      }));
+      alert('Failed to generate feedback. Please try again.');
+    }
+  };
+
+  const handleViewFeedback = async () => {
+    try {
+      console.log('Starting feedback generation...');
+      setState(prev => ({ ...prev, isLoading: true }));
+      await getFeedback(state.messages);
+      setReadyForFeedback(false);
+      console.log('Feedback generation complete');
+    } catch (error) {
+      console.error('Error in handleViewFeedback:', error);
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
   };
 
   return (
@@ -86,18 +186,30 @@ function App() {
               ))}
             </div>
 
-            <ChatInput
-              onSubmit={handleSubmitResponse}
-              disabled={state.isLoading}
-            />
+            {readyForFeedback ? (
+              <button
+                onClick={handleViewFeedback}
+                disabled={state.isLoading}
+                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:bg-blue-300"
+              >
+                {state.isLoading ? 'Generating Feedback...' : 'View Interview Feedback'}
+              </button>
+            ) : (
+              <ChatInput
+                onSubmit={handleSubmitResponse}
+                disabled={state.isLoading}
+              />
+            )}
           </div>
         )}
 
         {state.isComplete && state.feedback && (
-          <InterviewFeedback
-            feedback={state.feedback}
-            onRestart={handleRestart}
-          />
+          <div className="w-full max-w-3xl">
+            <InterviewFeedback
+              feedback={state.feedback}
+              onRestart={handleRestart}
+            />
+          </div>
         )}
       </main>
     </div>
