@@ -3,57 +3,49 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const router = express.Router();
 
 // Initialize Gemini API
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
-const NIGERIAN_STYLE_PROMPT = `
-You are an AI interviewer speaking in the style of a Nigerian professional.
-Your responses should:
-1. Use warm, engaging Nigerian expressions and proverbs naturally
-2. Maintain professionalism while being culturally rich
-3. Include at least one Nigerian proverb or saying in each response
-4. Keep responses focused on the job interview context
-5. Use phrases like "My friend," "You see," or "Ah ah!" naturally
-6. Mix wisdom with gentle humor
-
-Examples of tone:
-- "Ah! Just as a farmer knows his crops, tell me how you've grown in your career."
-- "My friend, 'Knowledge is like a garden; if it is not cultivated, it cannot be harvested.'"
-- "You see, experience is like wine - it gets better with time. Tell me about yours."
-`;
+// let userInput = [];
 
 router.post('/start-interview', async (req, res) => {
-    const { role, userResponse, questionCount = 0 } = req.body;
-
+    const { role, userResponse,} = req.body;
+    const prompt1 = `
+    I would like you to carry out a practice job interview with me for the role of ${role}. Can you then give me a
+     job interview for the role stated so I can response to you after each question. You need to ask at least 
+     6 questions with the first question being "Tell me about yourself". Do not mention that it is a practice 
+     interview. Please ask the questions without numbering them, and after asking the initial question build on
+      my response when asking the following question. At the end of the interview, mention the interview is over 
+      instead of the number of questions being over and give feedback on how I performed after
+      asking all questions.
+    `;
+//  questionCount = 0 
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
+        // if (userResponse) {
+        //     userInput.push(userResponse);
+        // };
         // Changed from 5 to 3 questions
-        if (questionCount >= 3) {
-            res.json({ 
-                message: "Thank you for your responses! Let me prepare your feedback.",
-                isComplete: true 
-            });
-            return;
-        }
+        // if (questionCount >= 3) {
+        //     res.json({ 
+        //         message: "Thank you for your responses! Let me prepare your feedback.",
+        //         isComplete: true 
+        //     });
+        //     return;
+        // }
 
         // Construct the prompt
         let prompt;
         if (!userResponse) {
             prompt = `
-                ${NIGERIAN_STYLE_PROMPT}
-                You are interviewing for the role of ${role}.
-                This is a 3-question interview.
+                ${prompt1}
                 Start the interview with a warm greeting and ask them to tell you about themselves.
-                Include a relevant proverb about new beginnings or introductions.
             `;
         } else {
             prompt = `
-                ${NIGERIAN_STYLE_PROMPT}
-                You are interviewing for the role of ${role}.
-                This is question ${questionCount + 1} of 3.
-                The candidate's previous response was: "${userResponse}"
-                Provide a brief, encouraging comment about their response (with a relevant proverb),
-                then ask your next question about their skills, experience, or approach to work.
+                ${prompt1}
+                The previous response was: "${userResponse}"
+                Provide a brief, encouraging comment about their response, then ask your next question.
                 Make sure your response feels warm and engaging while remaining professional.
             `;
         }
@@ -81,47 +73,46 @@ router.post('/get-feedback', async (req, res) => {
         
         const prompt = `
             ${NIGERIAN_STYLE_PROMPT}
-            You are providing feedback for a ${role} interview.
+            You are providing feedback for a ${role} job interview.
             Review these interview responses: ${JSON.stringify(responses)}
-            
-            Provide detailed interview feedback in this exact JSON structure:
-            {
-                "overallFeedback": "A warm Nigerian-style general assessment of the interview",
-                "strengths": [
-                    {
-                        "strength": "First key strength point",
-                        "proverb": "Related Nigerian proverb"
-                    },
-                    {
-                        "strength": "Second key strength point",
-                        "proverb": "Related Nigerian proverb"
-                    },
-                    {
-                        "strength": "Third key strength point",
-                        "proverb": "Related Nigerian proverb"
-                    }
-                ],
-                "improvements": [
-                    {
-                        "improvement": "First area for improvement",
-                        "proverb": "Encouraging Nigerian proverb"
-                    },
-                    {
-                        "improvement": "Second area for improvement",
-                        "proverb": "Encouraging Nigerian proverb"
-                    }
-                ],
-                "rating": 7,
-                "conclusion": "A motivational Nigerian-style closing statement"
-            }
-
             Important:
-            - The rating must be a number between 1 and 10
-            - Each strength and improvement must have both a main point and a related proverb
-            - Format the response as valid JSON
+            - Each strength and improvement must have a main point
             - Include specific examples from their responses
             - Keep the feedback constructive and encouraging
         `;
+
+// extra request content from Jasmin's Nigerian-style interviewer.
+        
+        // Provide detailed interview feedback in this exact JSON structure:
+        // {
+        //     "overallFeedback": "A warm Nigerian-style general assessment of the interview",
+        //     "strengths": [
+        //         {
+        //             "strength": "First key strength point",
+        //             "proverb": "Related Nigerian proverb"
+        //         },
+        //         {
+        //             "strength": "Second key strength point",
+        //             "proverb": "Related Nigerian proverb"
+        //         },
+        //         {
+        //             "strength": "Third key strength point",
+        //             "proverb": "Related Nigerian proverb"
+        //         }
+        //     ],
+        //     "improvements": [
+        //         {
+        //             "improvement": "First area for improvement",
+        //             "proverb": "Encouraging Nigerian proverb"
+        //         },
+        //         {
+        //             "improvement": "Second area for improvement",
+        //             "proverb": "Encouraging Nigerian proverb"
+        //         }
+        //     ],
+        //     "rating": 7,
+        //     "conclusion": "A motivational Nigerian-style closing statement"
+        // }
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
