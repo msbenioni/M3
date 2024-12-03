@@ -30,6 +30,8 @@ export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
       <button
         type="submit"
         disabled={disabled || !input.trim()}
+        title="Send message"
+        aria-label="Send message"
         className="flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Send className="h-5 w-5" />

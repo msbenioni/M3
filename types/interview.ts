@@ -1,8 +1,3 @@
-export interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
 export interface InterviewState {
   jobTitle: string;
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -17,4 +12,4 @@ export interface InterviewState {
     conclusion: string;
   } | null;
   questionCount: number;
-}
+} 

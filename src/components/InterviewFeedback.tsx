@@ -1,8 +1,13 @@
-import React from 'react';
 import { CheckCircle, RefreshCcw } from 'lucide-react';
 
 interface InterviewFeedbackProps {
-  feedback: string;
+  feedback: {
+    overallFeedback: string;
+    strengths: Array<{ strength: string; action: string }>;
+    improvements: Array<{ improvement: string; action: string }>;
+    rating: number;
+    conclusion: string;
+  };
   onRestart: () => void;
 }
 
@@ -14,9 +19,39 @@ export function InterviewFeedback({ feedback, onRestart }: InterviewFeedbackProp
         <h2 className="text-xl font-semibold">Interview Complete</h2>
       </div>
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Feedback & Suggestions</h3>
-        <div className="rounded-lg bg-gray-50 p-4 text-gray-700">
-          {feedback}
+        <div>
+          <h3 className="text-lg font-medium">Overall Feedback</h3>
+          <p className="mt-2 text-gray-700">{feedback.overallFeedback}</p>
+        </div>
+        <div>
+          <h3 className="text-lg font-medium">Key Strengths</h3>
+          <ul className="mt-2 space-y-2">
+            {feedback.strengths.map((item, index) => (
+              <li key={index} className="rounded-lg bg-gray-50 p-4">
+                <p className="font-medium text-gray-800">{item.strength}</p>
+                <p className="mt-1 text-gray-600">Action step: {item.action}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-lg font-medium">Areas for Growth</h3>
+          <ul className="mt-2 space-y-2">
+            {feedback.improvements.map((item, index) => (
+              <li key={index} className="rounded-lg bg-gray-50 p-4">
+                <p className="font-medium text-gray-800">{item.improvement}</p>
+                <p className="mt-1 text-gray-600">Action step: {item.action}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-lg font-medium">Overall Rating</h3>
+          <p className="mt-2 text-gray-700">{feedback.rating}/10</p>
+        </div>
+        <div>
+          <h3 className="text-lg font-medium">Final Thoughts</h3>
+          <p className="mt-2 text-gray-700">{feedback.conclusion}</p>
         </div>
       </div>
       <button
