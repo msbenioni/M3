@@ -24,12 +24,13 @@ router.post('/start-interview', async (req, res) => {
     const { role, userResponse, questionCount = 0 } = req.body;
 
     try {
+        console.log('Received request:', { role, userResponse, questionCount });
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
         // Changed from 5 to 3 questions
         if (questionCount >= 3) {
             res.json({ 
-                message: "That’s a wrap! Let me put together some feedback for you.",
+                message: "That's a wrap! Let me put together some feedback for you.",
                 isComplete: true 
             });
             return;
@@ -60,14 +61,19 @@ router.post('/start-interview', async (req, res) => {
         // Generate response
         const result = await model.generateContent(prompt);
         const response = await result.response;
+        console.log('Generated response:', response.text());
         
         res.json({ 
             message: response.text(),
             questionCount: questionCount + 1
         });
     } catch (error) {
-        console.error('Error connecting to Gemini API:', error.message);
-        res.status(500).json({ error: 'Failed to connect to the Gemini API' });
+        console.error('Detailed error:', error);
+        res.status(500).json({ 
+            error: 'Failed to connect to the Gemini API',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

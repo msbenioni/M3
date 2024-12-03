@@ -10,8 +10,8 @@ export interface InterviewState {
   isComplete: boolean;
   feedback: {
     overallFeedback: string;
-    strengths: string[];
-    improvements: string[];
+    strengths: Array<{ strength: string; proverb: string }>;
+    improvements: Array<{ improvement: string; proverb: string }>;
     rating: number;
     conclusion: string;
   } | null;
