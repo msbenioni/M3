@@ -8,5 +8,12 @@ export interface InterviewState {
   messages: Message[];
   isLoading: boolean;
   isComplete: boolean;
-  feedback: string | null;
+  feedback: {
+    overallFeedback: string;
+    strengths: Array<{ strength: string; action: string }>;
+    improvements: Array<{ improvement: string; action: string }>;
+    rating: number;
+    conclusion: string;
+  } | null;
+  questionCount: number;
 }

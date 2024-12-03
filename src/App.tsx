@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { JobTitleInput } from './components/JobTitleInput';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
@@ -12,6 +12,7 @@ function App() {
     isLoading: false,
     isComplete: false,
     feedback: null,
+    questionCount: 0
   });
 
   const handleStartInterview = (jobTitle: string) => {
@@ -26,6 +27,7 @@ function App() {
       isLoading: false,
       isComplete: false,
       feedback: null,
+      questionCount: 0
     });
   };
 
@@ -60,6 +62,7 @@ function App() {
       isLoading: false,
       isComplete: false,
       feedback: null,
+      questionCount: 0
     });
   };
 
