@@ -5,20 +5,19 @@ const router = express.Router();
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const NIGERIAN_STYLE_PROMPT = `
-You are an AI interviewer speaking in the style of a Nigerian professional.
+const GARY_V_STYLE_PROMPT = `
+You are an AI interviewer speaking in the style of Gary Vaynerchuk (Gary V).
 Your responses should:
-1. Use warm, engaging Nigerian expressions and proverbs naturally
-2. Maintain professionalism while being culturally rich
-3. Include at least one Nigerian proverb or saying in each response
-4. Keep responses focused on the job interview context
-5. Use phrases like "My friend," "You see," or "Ah!" naturally
-6. Mix wisdom with gentle humor
+1. Be high-energy, motivational, and practical.
+2. Focus on direct, honest feedback while being inspiring and optimistic.
+3. Use a conversational tone with phrases like "Look," "Here’s the thing," "You’ve got this,"
+4. Incorporate business wisdom and practical advice.
+5. Relate answers to the real world with examples or analogies.
 
 Examples of tone:
-- "Ah! Just as a farmer knows his crops, tell me how you've grown in your career."
-- "My friend, 'Knowledge is like a garden; if it is not cultivated, it cannot be harvested.'"
-- "You see, experience is like wine - it gets better with time. Tell me about yours."
+- "Look, it’s all about the execution. You can talk all day, but I want to know: What’s your plan for making it happen?"
+- "Here’s the thing: You’ve got to be self-aware. Tell me, how do you double down on what you're great at?"
+- "You’ve got this! Think of it like building a brand—consistency and patience are key."
 `;
 
 router.post('/start-interview', async (req, res) => {
@@ -30,7 +29,7 @@ router.post('/start-interview', async (req, res) => {
         // Changed from 5 to 3 questions
         if (questionCount >= 3) {
             res.json({ 
-                message: "Thank you for your responses! Let me prepare your feedback.",
+                message: "That’s a wrap! Let me put together some feedback for you.",
                 isComplete: true 
             });
             return;
@@ -40,21 +39,21 @@ router.post('/start-interview', async (req, res) => {
         let prompt;
         if (!userResponse) {
             prompt = `
-                ${NIGERIAN_STYLE_PROMPT}
+                ${GARY_V_STYLE_PROMPT}
                 You are interviewing for the role of ${role}.
                 This is a 3-question interview.
                 Start the interview with a warm greeting and ask them to tell you about themselves.
-                Include a relevant proverb about new beginnings or introductions.
+                Make it motivational, using an example like, "Think of this like your elevator pitch. How are you selling YOU?"
             `;
         } else {
             prompt = `
-                ${NIGERIAN_STYLE_PROMPT}
+                ${GARY_V_STYLE_PROMPT}
                 You are interviewing for the role of ${role}.
                 This is question ${questionCount + 1} of 3.
                 The candidate's previous response was: "${userResponse}"
-                Provide a brief, encouraging comment about their response (with a relevant proverb),
-                then ask your next question about their skills, experience, or approach to work.
-                Make sure your response feels warm and engaging while remaining professional.
+                Provide a quick, energetic comment about their response (like, "That’s great, but how do you take it to the next level?").
+                Then ask a follow-up question focused on their skills, experience, or execution strategy.
+                Keep the tone enthusiastic and forward-thinking.
             `;
         }
 
@@ -77,57 +76,62 @@ router.post('/get-feedback', async (req, res) => {
     const { role, responses } = req.body;
 
     try {
+        console.log('Received feedback request for role:', role);
+        console.log('Responses:', JSON.stringify(responses, null, 2));
+        
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         
         const prompt = `
-            ${NIGERIAN_STYLE_PROMPT}
+            ${GARY_V_STYLE_PROMPT}
             You are providing feedback for a ${role} interview.
             Review these interview responses: ${JSON.stringify(responses)}
             
             Provide detailed interview feedback in this exact JSON structure:
             {
-                "overallFeedback": "A warm Nigerian-style general assessment of the interview",
+                "overallFeedback": "High-energy, motivational overall assessment of the interview",
                 "strengths": [
                     {
                         "strength": "First key strength point",
-                        "proverb": "Related Nigerian proverb"
+                        "proverb": "Related practical advice or analogy"
                     },
                     {
                         "strength": "Second key strength point",
-                        "proverb": "Related Nigerian proverb"
+                        "proverb": "Related practical advice or analogy"
                     },
                     {
                         "strength": "Third key strength point",
-                        "proverb": "Related Nigerian proverb"
+                        "proverb": "Related practical advice or analogy"
                     }
                 ],
                 "improvements": [
                     {
                         "improvement": "First area for improvement",
-                        "proverb": "Encouraging Nigerian proverb"
+                        "proverb": "Encouraging example or motivational advice"
                     },
                     {
                         "improvement": "Second area for improvement",
-                        "proverb": "Encouraging Nigerian proverb"
+                        "proverb": "Encouraging example or motivational advice"
                     }
                 ],
                 "rating": 7,
-                "conclusion": "A motivational Nigerian-style closing statement"
+                "conclusion": "Inspirational Gary V-style closing statement"
             }
 
             Important:
             - The rating must be a number between 1 and 10
-            - Each strength and improvement must have both a main point and a related proverb
+            - Each strength and improvement must include practical advice
             - Format the response as valid JSON
-            - Include specific examples from their responses
-            - Keep the feedback constructive and encouraging
+            - Keep the feedback honest, constructive, and motivational
         `;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
+        const rawText = response.text();
+        
+        console.log('Raw AI response:', rawText);
         
         try {
-            const feedbackData = JSON.parse(response.text());
+            const feedbackData = JSON.parse(rawText);
             
             // Validate the structure
             if (
@@ -141,26 +145,29 @@ router.post('/get-feedback', async (req, res) => {
                 !feedbackData.strengths.every(s => s.strength && s.proverb) ||
                 !feedbackData.improvements.every(i => i.improvement && i.proverb)
             ) {
+                console.error('Invalid feedback structure:', feedbackData);
                 throw new Error('Invalid feedback structure');
             }
 
             res.json({ feedback: feedbackData });
+            
         } catch (parseError) {
-            console.error('Parse error:', parseError);
-            console.error('Raw response:', response.text());
+            console.error('Parse error:', parseError.message);
+            console.error('Raw text that failed to parse:', rawText);
             res.status(500).json({ 
                 error: 'Failed to parse feedback',
                 details: parseError.message,
-                rawResponse: response.text()
+                rawResponse: rawText
             });
         }
     } catch (error) {
-        console.error('Error generating feedback:', error);
+        console.error('Error in feedback generation:', error);
         res.status(500).json({ 
             error: 'Failed to generate feedback',
-            details: error.message 
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
 
-module.exports = router; 
+module.exports = router;

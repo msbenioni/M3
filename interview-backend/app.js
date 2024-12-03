@@ -1,29 +1,27 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-
-// Load environment variables
-dotenv.config();
+require('dotenv').config();
 
 const app = express();
 
-// Middleware
+// Enable CORS and JSON parsing
 app.use(cors());
 app.use(express.json());
 
-// Import routes
+// Mount the Gemini route
 const geminiRoute = require('./Routes/geminiRoute');
-
-// Use routes
 app.use('/api/gemini', geminiRoute);
 
-// Error handling
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something broke!' });
+  console.error('Error:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    details: err.message
+  });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 }); 
