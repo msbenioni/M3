@@ -3,51 +3,47 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const router = express.Router();
 
 // Initialize Gemini API
-const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyAvE6YeRSefz9ezp6A6UsfKrCGCm7z-Gh0");
 
-// let userInput = [];
+let userInput = [];
 
 router.post('/start-interview', async (req, res) => {
-    const { role, userResponse,} = req.body;
     const prompt1 = `
-    I would like you to carry out a practice job interview with me for the role of ${role}. Can you then give me a
-     job interview for the role stated so I can response to you after each question. You need to ask at least 
-     6 questions with the first question being "Tell me about yourself". Do not mention that it is a practice 
-     interview. Please ask the questions without numbering them, and after asking the initial question build on
-      my response when asking the following question. At the end of the interview, mention the interview is over 
-      instead of the number of questions being over and give feedback on how I performed after
-      asking all questions.
+    You are conducting a six-question job interview for the mentioned role. The first 
+    question must be "Tell me about yourself", and the remaining six questions must be different topics. 
+    Wait for a response before asking the following questions. Ask the questions without numbering them, 
+    building on the responses when asking the following question. At the end of the interview, state that the 
+    interview is over and give feedback on how the user performed after asking all questions.
+    Crucially, you must only ask one question at a time and await a response from the user before proceeding to the next question.
     `;
-//  questionCount = 0 
-    try {
+    const prompt2 = `You are conducting a six-question job interview. The interviewee will first state the job title they are applying for. Your first question MUST be: "Tell me about yourself." After the interviewee provides their answer, you MUST wait for my response before asking the next question. This process will repeat for all six questions. The remaining five questions should be unique and relevant to the stated job title. After the sixth question, provide me with constructive feedback on the interviewee's performance, focusing on the content of their answers and how well they addressed the questions asked. Avoid commenting on grammar or spelling. Crucially, you must only ask one question at a time and await a response from the user before proceeding to the next question.`;
+
+    const { role, userResponse,} = req.body;
+    try { 
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-        // if (userResponse) {
-        //     userInput.push(userResponse);
-        // };
-        // Changed from 5 to 3 questions
-        // if (questionCount >= 3) {
-        //     res.json({ 
-        //         message: "Thank you for your responses! Let me prepare your feedback.",
-        //         isComplete: true 
-        //     });
-        //     return;
-        // }
+        if (userResponse) {
+            userInput.push(userResponse);
+            console.log(userInput)
+        };
+
 
         // Construct the prompt
         let prompt;
         if (!userResponse) {
             prompt = `
-                ${prompt1}
+                The role you will be interviewing me for is ${role}. ${prompt1} 
                 Start the interview with a warm greeting and ask them to tell you about themselves.
             `;
-        } else {
+        } else if (userInput.length < 6){
             prompt = `
                 ${prompt1}
-                The previous response was: "${userResponse}"
-                Provide a brief, encouraging comment about their response, then ask your next question.
-                Make sure your response feels warm and engaging while remaining professional.
+                The previous user responses are: "${userInput}"
+                Provide a brief, encouraging comment about their most recent response, then ask your next question.
             `;
+        } else {
+            prompt = `You are providing feedback for a job interview for ${role}, please provide feedback based on the following responses ${userInput}, format the feedback as a paragraph, 
+            there is no need to separate and identify the feedback topics`;
         }
 
         // Generate response
@@ -56,7 +52,7 @@ router.post('/start-interview', async (req, res) => {
         
         res.json({ 
             message: response.text(),
-            questionCount: questionCount + 1
+            // questionCount: questionCount + 1
         });
     } catch (error) {
         console.error('Error connecting to Gemini API:', error.message);
@@ -72,7 +68,7 @@ router.post('/get-feedback', async (req, res) => {
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         
         const prompt = `
-            ${NIGERIAN_STYLE_PROMPT}
+            ${prompt1}
             You are providing feedback for a ${role} job interview.
             Review these interview responses: ${JSON.stringify(responses)}
             Important:
@@ -80,39 +76,6 @@ router.post('/get-feedback', async (req, res) => {
             - Include specific examples from their responses
             - Keep the feedback constructive and encouraging
         `;
-
-// extra request content from Jasmin's Nigerian-style interviewer.
-        
-        // Provide detailed interview feedback in this exact JSON structure:
-        // {
-        //     "overallFeedback": "A warm Nigerian-style general assessment of the interview",
-        //     "strengths": [
-        //         {
-        //             "strength": "First key strength point",
-        //             "proverb": "Related Nigerian proverb"
-        //         },
-        //         {
-        //             "strength": "Second key strength point",
-        //             "proverb": "Related Nigerian proverb"
-        //         },
-        //         {
-        //             "strength": "Third key strength point",
-        //             "proverb": "Related Nigerian proverb"
-        //         }
-        //     ],
-        //     "improvements": [
-        //         {
-        //             "improvement": "First area for improvement",
-        //             "proverb": "Encouraging Nigerian proverb"
-        //         },
-        //         {
-        //             "improvement": "Second area for improvement",
-        //             "proverb": "Encouraging Nigerian proverb"
-        //         }
-        //     ],
-        //     "rating": 7,
-        //     "conclusion": "A motivational Nigerian-style closing statement"
-        // }
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -125,9 +88,6 @@ router.post('/get-feedback', async (req, res) => {
                 typeof feedbackData.overallFeedback !== 'string' ||
                 !Array.isArray(feedbackData.strengths) ||
                 !Array.isArray(feedbackData.improvements) ||
-                typeof feedbackData.rating !== 'number' ||
-                feedbackData.rating < 1 ||
-                feedbackData.rating > 10 ||
                 typeof feedbackData.conclusion !== 'string' ||
                 !feedbackData.strengths.every(s => s.strength && s.proverb) ||
                 !feedbackData.improvements.every(i => i.improvement && i.proverb)
