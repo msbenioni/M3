@@ -59,59 +59,59 @@ router.post('/start-interview', async (req, res) => {
         res.status(500).json({ error: 'Failed to connect to the Gemini API' });
     }
 });
-
+// feedback is provided through the initial prompt
 // Update the feedback endpoint
-router.post('/get-feedback', async (req, res) => {
-    const { role, responses } = req.body;
+// router.post('/get-feedback', async (req, res) => {
+//     const { role, responses } = req.body;
 
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+//     try {
+//         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         
-        const prompt = `
-            ${prompt1}
-            You are providing feedback for a ${role} job interview.
-            Review these interview responses: ${JSON.stringify(responses)}
-            Important:
-            - Each strength and improvement must have a main point
-            - Include specific examples from their responses
-            - Keep the feedback constructive and encouraging
-        `;
+//         const prompt = `
+//             ${prompt1}
+//             You are providing feedback for a ${role} job interview.
+//             Review these interview responses: ${JSON.stringify(responses)}
+//             Important:
+//             - Each strength and improvement must have a main point
+//             - Include specific examples from their responses
+//             - Keep the feedback constructive and encouraging
+//         `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
+//         const result = await model.generateContent(prompt);
+//         const response = await result.response;
         
-        try {
-            const feedbackData = JSON.parse(response.text());
+//         try {
+//             const feedbackData = JSON.parse(response.text());
             
-            // Validate the structure
-            if (
-                typeof feedbackData.overallFeedback !== 'string' ||
-                !Array.isArray(feedbackData.strengths) ||
-                !Array.isArray(feedbackData.improvements) ||
-                typeof feedbackData.conclusion !== 'string' ||
-                !feedbackData.strengths.every(s => s.strength && s.proverb) ||
-                !feedbackData.improvements.every(i => i.improvement && i.proverb)
-            ) {
-                throw new Error('Invalid feedback structure');
-            }
+//             // Validate the structure
+//             if (
+//                 typeof feedbackData.overallFeedback !== 'string' ||
+//                 !Array.isArray(feedbackData.strengths) ||
+//                 !Array.isArray(feedbackData.improvements) ||
+//                 typeof feedbackData.conclusion !== 'string' ||
+//                 !feedbackData.strengths.every(s => s.strength && s.proverb) ||
+//                 !feedbackData.improvements.every(i => i.improvement && i.proverb)
+//             ) {
+//                 throw new Error('Invalid feedback structure');
+//             }
 
-            res.json({ feedback: feedbackData });
-        } catch (parseError) {
-            console.error('Parse error:', parseError);
-            console.error('Raw response:', response.text());
-            res.status(500).json({ 
-                error: 'Failed to parse feedback',
-                details: parseError.message,
-                rawResponse: response.text()
-            });
-        }
-    } catch (error) {
-        console.error('Error generating feedback:', error);
-        res.status(500).json({ 
-            error: 'Failed to generate feedback',
-            details: error.message 
-        });
-    }
-});
+//             res.json({ feedback: feedbackData });
+//         } catch (parseError) {
+//             console.error('Parse error:', parseError);
+//             console.error('Raw response:', response.text());
+//             res.status(500).json({ 
+//                 error: 'Failed to parse feedback',
+//                 details: parseError.message,
+//                 rawResponse: response.text()
+//             });
+//         }
+//     } catch (error) {
+//         console.error('Error generating feedback:', error);
+//         res.status(500).json({ 
+//             error: 'Failed to generate feedback',
+//             details: error.message 
+//         });
+//     }
+// });
 
 module.exports = router; 
