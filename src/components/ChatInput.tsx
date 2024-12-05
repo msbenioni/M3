@@ -33,6 +33,7 @@ export function ChatInput({ onSubmit, disabled, questionCount, maxQuestions }: C
   const progress = Math.min((questionCount / maxQuestions) * 100, 100); // Cap at 100%
 
   return (
+
     <div className="w-full">
       {/* Progress Bar */}
       <div className="relative w-full h-4 rounded-lg bg-gray-300">
@@ -72,5 +73,6 @@ export function ChatInput({ onSubmit, disabled, questionCount, maxQuestions }: C
         </span>
       </div>
     </div>
+
   );
 }

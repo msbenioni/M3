@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CheckCircle, RefreshCcw, Star } from 'lucide-react';
 
@@ -6,6 +7,7 @@ interface InterviewFeedback {
     overallFeedback: string;
     strengths: Array<{ strength: string; proverb: string }>;
     improvements: Array<{ improvement: string; proverb: string }>;
+
     rating: number;
     conclusion: string;
   };
@@ -14,6 +16,7 @@ interface InterviewFeedback {
 
 export function InterviewFeedback({ feedback, onRestart }: InterviewFeedback) {
   return (
+
     <div className="w-full rounded-lg bg-white p-6 shadow-lg">
       <h2 className="mb-4 text-2xl font-bold">Interview Feedback</h2>
       
@@ -31,6 +34,7 @@ export function InterviewFeedback({ feedback, onRestart }: InterviewFeedback) {
                 <span className="font-medium">{item.strength}</span>
                 <br />
                 <span className="italic text-gray-600">"{item.proverb}"</span>
+
               </li>
             ))}
           </ul>
@@ -47,6 +51,7 @@ export function InterviewFeedback({ feedback, onRestart }: InterviewFeedback) {
               </li>
             ))}
           </ul>
+
         </div>
 
         <div>

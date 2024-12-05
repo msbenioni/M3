@@ -1,5 +1,6 @@
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+
 const { validateRole, validateQuestionCount, validateResponses, generatePrompt } = require('./utils');
 const SENIOR_PROFESSIONAL_PROMPT = require('./prompts');
 const router = express.Router();

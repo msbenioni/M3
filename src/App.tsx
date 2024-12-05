@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { JobTitleInput } from './components/JobTitleInput';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
@@ -15,11 +15,13 @@ const initialState = (): InterviewState => ({
 });
 
 function App() {
+
   const [state, setState] = useState<InterviewState>(initialState());
   const [readyForFeedback, setReadyForFeedback] = useState(false);
 
   const updateState = (updates: Partial<InterviewState>) =>
     setState((prev) => ({ ...prev, ...updates }));
+
 
   const handleStartInterview = (jobTitle: string) => {
     updateState({
@@ -30,6 +32,7 @@ function App() {
           content: `Tell me about yourself and why you're interested in the ${jobTitle} position.`,
         },
       ],
+
       questionCount: 0,
     });
   };
@@ -39,9 +42,42 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+
     });
     if (!response.ok) throw new Error('Failed to fetch from API');
     return response.json();
+  };
+
+  const handleGenerateFeedback = async () => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const feedbackResponse = await fetch('http://localhost:3000/api/interview/get-feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId: 'unique-session-id',
+        }),
+      });
+
+      if (!feedbackResponse.ok) {
+        const errorData = await feedbackResponse.json();
+        throw new Error(errorData.message || 'Failed to get feedback');
+      }
+
+      const feedbackData = await feedbackResponse.json();
+
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        feedback: feedbackData.feedback,
+      }));
+    } catch (error) {
+      console.error('Error generating feedback:', error);
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
   };
 
   const handleSubmitResponse = async (message: string) => {
@@ -87,6 +123,7 @@ function App() {
         responses: state.messages,
       });
 
+
       updateState({
         isLoading: false,
         isComplete: true,
@@ -97,11 +134,14 @@ function App() {
       console.error('Error getting feedback:', error);
       updateState({ isLoading: false });
       alert('Failed to generate feedback. Please try again.');
+
     }
   };
 
   const handleRestart = () => {
+
     setState(initialState());
+
   };
 
   const renderContent = () => {
@@ -114,6 +154,7 @@ function App() {
         <InterviewFeedback feedback={state.feedback} onRestart={handleRestart} />
       );
     }
+
 
     return (
       <div className="flex h-full w-full max-w-3xl flex-1 flex-col gap-6 rounded-lg bg-white p-6 shadow-lg">
@@ -138,6 +179,7 @@ function App() {
   questionCount={state.questionCount} 
   maxQuestions={6} 
 />
+
 
         )}
       </div>
