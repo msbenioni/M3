@@ -14,6 +14,9 @@ const validateResponses = (responses) => {
     if (!Array.isArray(responses) || responses.length === 0) {
         throw new Error('Responses must be a non-empty array.');
     }
+    if (!responses.every(r => r.role && r.content)) {
+        throw new Error('Invalid response format.');
+    }
 };
 
 const generatePrompt = (role, userResponse, questionCount, basePrompt) => {

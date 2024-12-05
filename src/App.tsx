@@ -12,6 +12,7 @@ const initialState = (): InterviewState => ({
   isComplete: false,
   feedback: null,
   questionCount: 0,
+  canGenerateFeedback: false,
 });
 
 function App() {
@@ -42,52 +43,35 @@ function App() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-
     });
     if (!response.ok) throw new Error('Failed to fetch from API');
     return response.json();
   };
 
-  const handleGenerateFeedback = async () => {
-    setState(prev => ({ ...prev, isLoading: true }));
-    
-    try {
-      const feedbackResponse = await fetch('http://localhost:3000/api/interview/get-feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sessionId: 'unique-session-id',
-        }),
-      });
-
-      if (!feedbackResponse.ok) {
-        const errorData = await feedbackResponse.json();
-        throw new Error(errorData.message || 'Failed to get feedback');
-      }
-
-      const feedbackData = await feedbackResponse.json();
-
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        feedback: feedbackData.feedback,
-      }));
-    } catch (error) {
-      console.error('Error generating feedback:', error);
-      setState(prev => ({ ...prev, isLoading: false }));
-    }
+  const cleanAIResponse = (response: string): string => {
+    return response
+      // Remove various prefix patterns
+      .replace(/^\*\*[^*]+\*\*:?\s*/g, '')  // Removes any **text**: at start
+      .replace(/^"(.+)"$/, '$1')  // Remove surrounding quotes
+      .replace(/^I understand|^Thank you for sharing|^That's interesting/i, '')  // Remove common starts
+      .replace(/\*\*Next Thoughtful Question:\*\*\s*/g, '')  // Remove mid-text markers
+      .replace(/\*\*[^*]+\*\*/g, '')  // Remove any remaining **text**
+      .trim();
   };
 
   const handleSubmitResponse = async (message: string) => {
+    console.log('Starting submission with:', {
+      role: state.jobTitle,
+      message,
+      questionCount: state.questionCount
+    });
+
     setState((prev) => ({
       ...prev,
       messages: [...prev.messages, { role: 'user', content: message }],
-      isLoading: true, // Optional: Flag for loading
+      isLoading: true,
     }));
-  
-    // Send the response to the API
+
     try {
       const response = await fetch('/api/gemini/start-interview', {
         method: 'POST',
@@ -98,20 +82,48 @@ function App() {
           questionCount: state.questionCount,
         }),
       });
-  
-      if (response.ok) {
-        const data = await response.json();
-  
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          questionCount: prev.questionCount + 1,
-          messages: [...prev.messages, { role: 'assistant', content: data.message }],
-        }));
+
+      console.log('Response status:', response.status);
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} - ${responseText}`);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Failed to parse response: ${responseText}`);
+      }
+
+      const cleanedMessage = cleanAIResponse(data.message);
+      console.log('Cleaned message:', cleanedMessage);
+
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        questionCount: prev.questionCount + 1,
+        messages: [...prev.messages, { 
+          role: 'assistant', 
+          content: cleanedMessage
+        }],
+      }));
+
+      if (data.isComplete) {
+        setReadyForFeedback(true);
       }
     } catch (error) {
-      console.error('Error:', error);
-      setState((prev) => ({ ...prev, isLoading: false }));
+      console.error('Detailed error:', error);
+      setState((prev) => ({ 
+        ...prev, 
+        isLoading: false,
+        messages: [...prev.messages, { 
+          role: 'assistant', 
+          content: `Error: ${error.message}. Please try again.` 
+        }],
+      }));
     }
   };
   

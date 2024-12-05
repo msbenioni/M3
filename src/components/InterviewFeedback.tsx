@@ -1,20 +1,15 @@
-
-import React from 'react';
-import { CheckCircle, RefreshCcw, Star } from 'lucide-react';
-
-interface InterviewFeedback {
+interface InterviewFeedbackProps {
   feedback: {
     overallFeedback: string;
-    strengths: Array<{ strength: string; proverb: string }>;
-    improvements: Array<{ improvement: string; proverb: string }>;
-
+    strengths: Array<{ strength: string; action: string }>;
+    improvements: Array<{ improvement: string; action: string }>;
     rating: number;
     conclusion: string;
   };
   onRestart: () => void;
 }
 
-export function InterviewFeedback({ feedback, onRestart }: InterviewFeedback) {
+export function InterviewFeedback({ feedback, onRestart }: InterviewFeedbackProps) {
   return (
 
     <div className="w-full rounded-lg bg-white p-6 shadow-lg">
@@ -33,7 +28,7 @@ export function InterviewFeedback({ feedback, onRestart }: InterviewFeedback) {
               <li key={index} className="text-gray-700">
                 <span className="font-medium">{item.strength}</span>
                 <br />
-                <span className="italic text-gray-600">"{item.proverb}"</span>
+                <span className="italic text-gray-600">"{item.action}"</span>
 
               </li>
             ))}
@@ -47,7 +42,7 @@ export function InterviewFeedback({ feedback, onRestart }: InterviewFeedback) {
               <li key={index} className="text-gray-700">
                 <span className="font-medium">{item.improvement}</span>
                 <br />
-                <span className="italic text-gray-600">"{item.proverb}"</span>
+                <span className="italic text-gray-600">"{item.action}"</span>
               </li>
             ))}
           </ul>

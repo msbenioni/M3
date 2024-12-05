@@ -3,19 +3,20 @@ export interface Message {
   content: string;
 }
 
+export interface Feedback {
+  overallFeedback: string;
+  strengths: Array<{ strength: string; action: string }>;
+  improvements: Array<{ improvement: string; action: string }>;
+  rating: number;
+  conclusion: string;
+}
+
 export interface InterviewState {
   jobTitle: string;
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+  messages: Message[];
   isLoading: boolean;
   isComplete: boolean;
-
-  feedback: {
-    overallFeedback: string;
-    strengths: string[];
-    improvements: string[];
-
-    rating: number;
-    conclusion: string;
-  } | null;
+  canGenerateFeedback: boolean;
+  feedback: Feedback | null;
   questionCount: number;
 }
